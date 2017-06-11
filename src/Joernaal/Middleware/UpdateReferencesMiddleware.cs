@@ -3,7 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AngleSharp;
 using AngleSharp.Dom;
+using AngleSharp.Html;
 using AngleSharp.Parser.Html;
 using Microsoft.Extensions.Logging;
 
@@ -25,6 +27,7 @@ namespace Joernaal.Middleware
             if (context.Phase == ProcessingPhase.UpdatingReferences)
             {
                 var mapping = context.Item.Parent.Items.ToDictionary(element => element.SourcePath, element => element.TargetPath);
+
                 var parser = new HtmlParser();
                 var item = context.Item;
                 var extension = Path.GetExtension(item.TargetPath);
@@ -40,7 +43,13 @@ namespace Joernaal.Middleware
                     modified |= UpdateReferences(document, mapping, "script", "src");
                     if (modified)
                     {
-                        var sourceText = document.DocumentElement.OuterHtml;
+                        string sourceText;
+                        using (var writer = new StringWriter())
+                        {
+                            var formatter = new AutoSelectedMarkupFormatter();
+                            document.DocumentElement.ToHtml(writer, formatter);
+                            sourceText = writer.ToString();
+                        }
                         item.Contents = Encoding.UTF8.GetBytes(sourceText);
                         _logger.LogInformation("Updated references in '{Path}'", item.TargetPath);
                     }

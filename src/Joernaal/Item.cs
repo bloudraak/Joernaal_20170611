@@ -1,17 +1,22 @@
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace Joernaal
 {
     public class Item
     {
-        internal Item(Collection parent, string path)
+        internal Item(Collection parent, string path, dynamic properties)
         {
             Parent = parent;
             TargetPath = path;
+            Properties = properties;
             SourcePath = path;
             Contents = File.ReadAllBytes(SourceFullPath);
             Metadata = new ItemMetadata();
         }
+
+        public dynamic Properties { get; }
+
 
         public string SourceFullPath => Path.Combine(Parent.SourcePath, SourcePath);
 
@@ -25,11 +30,11 @@ namespace Joernaal
 
         public byte[] Contents { get; set; }
 
+        public ItemMetadata Metadata { get; }
+
         public override string ToString()
         {
             return $"{nameof(SourcePath)}: {SourcePath}, {nameof(TargetPath)}: {TargetPath}";
         }
-
-        public ItemMetadata Metadata { get; }
     }
 }

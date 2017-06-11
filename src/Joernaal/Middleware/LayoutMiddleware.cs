@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace Joernaal
@@ -9,7 +10,7 @@ namespace Joernaal
     public class LayoutMiddleware
     {
         private readonly ProcessDelegate _next;
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public LayoutMiddleware(ProcessDelegate next, ILoggerFactory loggerFactory)
         {
@@ -31,12 +32,14 @@ namespace Joernaal
                 {
 
                     var writer = new StringWriter();
+                    var value = item.Properties.Site?.Value;
+                    string title = string.Join(" &sect; ", item.Properties.Title?.Value, value).Trim();
                     writer.Write($@"<!DOCTYPE html>
 <html lang=""en-us"">
 <head>
     <meta charset=""utf-8"" />
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
-    <title>{item.Metadata.Title}</title>
+    <title>{title}</title>
 </head>
 <body>
     <header>

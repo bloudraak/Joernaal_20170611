@@ -11,7 +11,7 @@ namespace Joernaal
     public class ExtractTitleMiddleware
     {
         private readonly ProcessDelegate _next;
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public ExtractTitleMiddleware(ProcessDelegate next, ILoggerFactory loggerFactory)
         {
@@ -44,7 +44,7 @@ namespace Joernaal
 
                 if (!string.IsNullOrWhiteSpace(title))
                 {
-                    item.Metadata.Title = title;
+                    item.Properties.Title = title;
                     _logger.LogInformation("Extracting title '{Title}' from '{Path}'", title, item.TargetPath);
                 }
             }

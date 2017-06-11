@@ -43,7 +43,7 @@ namespace Joernaal
             }
         }
 
-        private async Task<int> RunAsync(string[] args)
+        private async Task<int> RunAsync(IReadOnlyList<string> args)
         {
             IServiceCollection services = new ServiceCollection();
 
@@ -98,8 +98,13 @@ namespace Joernaal
                 return collection;
 
             foreach (var file in result.Files)
+            {
+                if (file.Path.Contains(".joernaal/"))
+                {
+                    continue;
+                }
                 collection.CreateItem(file.Path);
-
+            }
             return collection;
         }
 
