@@ -4,6 +4,6 @@ namespace Joernaal
 {
     public interface IMiddleware
     {
-        Task InvokeAsync(HttpContext context, ProcessDelegate next);
+        Task InvokeAsync(JoernaalContext context, ProcessDelegate next);
     }
 }

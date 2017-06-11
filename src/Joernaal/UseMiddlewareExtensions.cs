@@ -57,7 +57,7 @@ namespace Joernaal
                 }
 
                 var parameters = methodinfo.GetParameters();
-                if (parameters.Length == 0 || parameters[0].ParameterType != typeof(HttpContext))
+                if (parameters.Length == 0 || parameters[0].ParameterType != typeof(JoernaalContext))
                 {
                     throw new InvalidOperationException("The first parameter does not return an invoke method");
                 }
@@ -74,7 +74,7 @@ namespace Joernaal
                 var factory = Compile<object>(methodinfo, parameters);
                 return context =>
                 {
-                    var serviceProvider = context.RequestServices ?? applicationServices;
+                    var serviceProvider = context.ProcessingServices ?? applicationServices;
                     if (serviceProvider == null)
                     {
                         throw new InvalidOperationException("There is no service provider available");
@@ -90,7 +90,7 @@ namespace Joernaal
             {
                 return async context =>
                 {
-                    var middlewareFactory = (IMiddlewareFactory)context.RequestServices.GetService(typeof(IMiddlewareFactory));
+                    var middlewareFactory = (IMiddlewareFactory)context.ProcessingServices.GetService(typeof(IMiddlewareFactory));
                     if (middlewareFactory == null)
                     {
                         // No middleware factory
@@ -116,13 +116,13 @@ namespace Joernaal
             });
         }
 
-        private static Func<T, HttpContext, IServiceProvider, Task> Compile<T>(MethodInfo methodinfo, ParameterInfo[] parameters)
+        private static Func<T, JoernaalContext, IServiceProvider, Task> Compile<T>(MethodInfo methodinfo, ParameterInfo[] parameters)
         {
             // If we call something like
             //
             // public class Middleware
             // {
-            //    public Task Invoke(HttpContext context, ILoggerFactory loggeryFactory)
+            //    public Task Invoke(JoernaalContext context, ILoggerFactory loggeryFactory)
             //    {
             //
             //    }
@@ -132,21 +132,21 @@ namespace Joernaal
             // We'll end up with something like this:
             //   Generic version:
             //
-            //   Task Invoke(Middleware instance, HttpContext httpContext, IServiceprovider provider)
+            //   Task Invoke(Middleware instance, JoernaalContext httpContext, IServiceprovider provider)
             //   {
             //      return instance.Invoke(httpContext, (ILoggerFactory)UseMiddlewareExtensions.GetService(provider, typeof(ILoggerFactory));
             //   }
 
             //   Non generic version:
             //
-            //   Task Invoke(object instance, HttpContext httpContext, IServiceprovider provider)
+            //   Task Invoke(object instance, JoernaalContext httpContext, IServiceprovider provider)
             //   {
             //      return ((Middleware)instance).Invoke(httpContext, (ILoggerFactory)UseMiddlewareExtensions.GetService(provider, typeof(ILoggerFactory));
             //   }
 
             var middleware = typeof(T);
 
-            var httpContextArg = Expression.Parameter(typeof(HttpContext), "httpContext");
+            var httpContextArg = Expression.Parameter(typeof(JoernaalContext), "httpContext");
             var providerArg = Expression.Parameter(typeof(IServiceProvider), "serviceProvider");
             var instanceArg = Expression.Parameter(middleware, "middleware");
 
@@ -179,7 +179,7 @@ namespace Joernaal
 
             var body = Expression.Call(middlewareInstanceArg, methodinfo, methodArguments);
 
-            var lambda = Expression.Lambda<Func<T, HttpContext, IServiceProvider, Task>>(body, instanceArg, httpContextArg, providerArg);
+            var lambda = Expression.Lambda<Func<T, JoernaalContext, IServiceProvider, Task>>(body, instanceArg, httpContextArg, providerArg);
 
             return lambda.Compile();
         }

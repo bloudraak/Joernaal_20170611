@@ -18,13 +18,14 @@ namespace Joernaal
             _logger = loggerFactory.CreateLogger("Markdown");
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task Invoke(JoernaalContext context)
         {
             var item = context.Item;
 
             var extension = Path.GetExtension(item.TargetPath);
-            if (string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase) ||
+            if ((string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(extension, ".markdown", StringComparison.OrdinalIgnoreCase))
+                && context.Phase == ProcessingPhase.Conversion)
             {
                 using (var sourceStream = new MemoryStream(item.Contents))
                 using (var targetStream = new MemoryStream())

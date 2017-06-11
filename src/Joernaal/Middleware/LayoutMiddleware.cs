@@ -17,11 +17,11 @@ namespace Joernaal
             _logger = loggerFactory.CreateLogger("Template");
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task Invoke(JoernaalContext context)
         {
             var item = context.Item;
             var extension = Path.GetExtension(item.TargetFullPath);
-            if (extension == ".html" || extension == ".htm")
+            if ((extension == ".html" || extension == ".htm") && context.Phase == ProcessingPhase.Conversion)
             {
                 var source = Encoding.UTF8.GetString(item.Contents);
                 var trimmedSource = source.Trim();

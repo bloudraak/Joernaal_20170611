@@ -5,9 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Text;
 using System.Threading.Tasks;
-using CommonMark;
+using Joernaal.Middleware;
 using Microsoft.AspNetCore.Razor;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -65,82 +64,43 @@ namespace Joernaal
             builder.UseMiddleware<LayoutMiddleware>();
             builder.UseMiddleware<SaveContentMiddleware>();
             builder.UseMiddleware<SynchronizeTimestampMiddleware>();
+            builder.UseMiddleware<UpdateReferencesMiddleware>();
 
             var request = builder.Build();
 
-            var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
-            matcher.AddInclude("**/*");
+            var collection = CreateCollection(args[0]);
 
-            var collection = new Collection(args[0]);
-
-            var directory = new DirectoryInfoWrapper(new DirectoryInfo(collection.SourcePath));
-            var result = matcher.Execute(directory);
-            if (!result.HasMatches)
+            foreach (var phase in Enum<ProcessingPhase>.GetValues())
             {
-                await Console.Out.WriteLineAsync("No files found");
-                return 1;
-            }
-
-            //var templateType = CreateTemplate();
-
-            
-            foreach (var file in result.Files)
-            {
-                collection.CreateItem(file.Path);
-            }
-
-            foreach (var item in collection.Items)
-            {
-                using (var scope = serviceProvider.CreateScope())
+                foreach (var item in collection.Items)
                 {
-                    var context = new HttpContext(item, scope);
-                    await request(context);
+                    using (var scope = serviceProvider.CreateScope())
+                    {
+                        var context = new JoernaalContext(item, scope);
+                        context.Phase = phase;
+                        await request(context);
+                    }
                 }
             }
-            
-            //foreach (var item in collection.Items)
-            //    await Process(templateType, item);
 
             return 0;
         }
 
-        private async Task Process(Type templateType, Item item)
+        private static Collection CreateCollection(string basePath)
         {
-            string outputPath;
+            var collection = new Collection(basePath);
 
-            Directory.CreateDirectory(Path.GetDirectoryName(item.TargetPath));
-            switch (Path.GetExtension(item.TargetPath))
-            {
-                case ".md":
-                case ".markdown":
-                    outputPath = Path.ChangeExtension(item.TargetPath, "html");
-                    using (Stream sourceStream = File.OpenRead(item.SourcePath))
-                    using (Stream targetStream = File.Create(outputPath))
-                    using (var reader = new StreamReader(sourceStream, Encoding.UTF8))
-                    using (var writer = new StreamWriter(targetStream))
-                    {
-                        var w = new StringWriter();
-                        CommonMarkConverter.Convert(reader, w);
+            var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
+            matcher.AddInclude("**/*");
+            var directory = new DirectoryInfoWrapper(new DirectoryInfo(collection.SourcePath));
+            var result = matcher.Execute(directory);
+            if (!result.HasMatches)
+                return collection;
 
-                        var template = (TemplateBase) Activator.CreateInstance(templateType);
-                        
-                        template.Body = w.ToString();
-                        await template.ExecuteAsync();
-                        await writer.WriteAsync(template.Source);
-                    }
+            foreach (var file in result.Files)
+                collection.CreateItem(file.Path);
 
-                    break;
-
-                default:
-                    outputPath = item.TargetPath;
-                    File.Copy(item.SourcePath, outputPath, true);
-                    break;
-            }
-
-            var creationTime = File.GetCreationTime(item.SourcePath);
-            var lastWriteTime = File.GetLastWriteTime(item.SourcePath);
-            File.SetCreationTime(outputPath, creationTime);
-            File.SetLastWriteTime(outputPath, lastWriteTime);
+            return collection;
         }
 
         private Type CreateTemplate()
@@ -214,6 +174,19 @@ namespace Joernaal
                 .AddSyntaxTrees(trees);
 
             return compilation;
+        }
+    }
+
+    public static class Enum<T> where T : struct, IComparable, IFormattable, IConvertible
+    {
+        public static IEnumerable<T> GetValues()
+        {
+            return (T[])Enum.GetValues(typeof(T));
+        }
+
+        public static IEnumerable<string> GetNames()
+        {
+            return Enum.GetNames(typeof(T));
         }
     }
 }
