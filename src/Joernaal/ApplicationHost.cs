@@ -1,7 +1,9 @@
-﻿namespace Joernaal
+﻿// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal
 {
     using System;
-    using System.Collections;
     using System.IO;
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
@@ -11,13 +13,14 @@
     public class ApplicationHost
     {
         private readonly ProcessDelegate _request;
-        public IServiceProvider ServiceProvider { get; }
 
         public ApplicationHost(IServiceProvider serviceProvider, ProcessDelegate request)
         {
             _request = request;
             ServiceProvider = serviceProvider;
         }
+
+        public IServiceProvider ServiceProvider { get; }
 
         public int Run(string sourcePath, string targetPath, string themesPath)
         {
@@ -31,14 +34,12 @@
             foreach (var phase in Enum<ProcessingPhase>.GetValues())
             {
                 foreach (var item in collection.Items)
-                {
                     using (var scope = ServiceProvider.CreateScope())
                     {
                         var context = new JoernaalContext(item, scope);
                         context.Phase = phase;
                         await _request(context);
                     }
-                }
             }
             return 0;
         }
@@ -57,9 +58,7 @@
             foreach (var file in result.Files)
             {
                 if (file.Path.Contains(".joernaal/"))
-                {
                     continue;
-                }
                 collection.CreateItem(file.Path);
             }
             return collection;

@@ -1,4 +1,7 @@
-namespace Joernaal
+// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal.Middleware
 {
     using System.IO;
     using System.Linq;
@@ -9,8 +12,8 @@ namespace Joernaal
 
     public class ExtractTitleMiddleware
     {
-        private readonly ProcessDelegate _next;
         private readonly ILogger _logger;
+        private readonly ProcessDelegate _next;
 
         public ExtractTitleMiddleware(ProcessDelegate next, ILoggerFactory loggerFactory)
         {
@@ -30,15 +33,13 @@ namespace Joernaal
                 var document = parser.Parse(source);
 
                 string title = null;
-                for (int header = 1; header < 7; header++)
+                for (var header = 1; header < 7; header++)
                 {
                     var cellSelector = $"h{header}";
                     var cells = document.QuerySelectorAll(cellSelector);
                     title = cells.Select(m => m.TextContent).FirstOrDefault();
                     if (!string.IsNullOrWhiteSpace(title))
-                    {
                         break;
-                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(title))

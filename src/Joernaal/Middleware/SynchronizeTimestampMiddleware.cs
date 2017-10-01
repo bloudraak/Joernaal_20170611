@@ -1,4 +1,7 @@
-﻿namespace Joernaal
+﻿// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal.Middleware
 {
     using System.IO;
     using System.Threading.Tasks;
@@ -6,8 +9,8 @@
 
     public class SynchronizeTimestampMiddleware
     {
-        private readonly ProcessDelegate _next;
         private readonly ILogger _logger;
+        private readonly ProcessDelegate _next;
 
         public SynchronizeTimestampMiddleware(ProcessDelegate next, ILoggerFactory loggerFactory)
         {

@@ -1,4 +1,7 @@
-﻿namespace Joernaal
+﻿// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal
 {
     using System;
     using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +24,7 @@
             services.AddLogging();
             var serviceProvider = services.BuildServiceProvider();
 
-            var startup = (IStartup)ActivatorUtilities.CreateInstance(serviceProvider, _startupType);
+            var startup = (IStartup) ActivatorUtilities.CreateInstance(serviceProvider, _startupType);
             startup.ConfigureServices(services);
             serviceProvider = services.BuildServiceProvider();
 

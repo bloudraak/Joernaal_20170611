@@ -1,4 +1,7 @@
-﻿namespace Joernaal
+﻿// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal
 {
     using System;
     using System.Collections.Generic;
@@ -7,7 +10,8 @@
 
     public sealed class ApplicationBuilder : IApplicationBuilder
     {
-        private readonly IList<Func<ProcessDelegate, ProcessDelegate>> _components = new List<Func<ProcessDelegate, ProcessDelegate>>();
+        private readonly IList<Func<ProcessDelegate, ProcessDelegate>> _components =
+                new List<Func<ProcessDelegate, ProcessDelegate>>();
 
         public ApplicationBuilder(IServiceProvider serviceProvider)
         {
@@ -29,9 +33,7 @@
             ProcessDelegate app = context => Task.CompletedTask;
 
             foreach (var component in _components.Reverse())
-            {
                 app = component(app);
-            }
 
             return app;
         }

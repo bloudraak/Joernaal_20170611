@@ -1,4 +1,7 @@
-namespace Joernaal
+// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal.Middleware
 {
     using System;
     using System.IO;
@@ -8,8 +11,8 @@ namespace Joernaal
 
     public class LayoutMiddleware
     {
-        private readonly ProcessDelegate _next;
         private readonly ILogger _logger;
+        private readonly ProcessDelegate _next;
 
         public LayoutMiddleware(ProcessDelegate next, ILoggerFactory loggerFactory)
         {
@@ -29,7 +32,6 @@ namespace Joernaal
                 if (!trimmedSource.StartsWith("<DOCTYPE", StringComparison.OrdinalIgnoreCase) &&
                     !trimmedSource.StartsWith("<HTML", StringComparison.OrdinalIgnoreCase))
                 {
-
                     var writer = new StringWriter();
                     var value = item.Properties.Site?.Value;
                     string title = string.Join(" &sect; ", item.Properties.Title?.Value, value).Trim();

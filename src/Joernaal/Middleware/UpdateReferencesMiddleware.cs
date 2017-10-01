@@ -1,4 +1,7 @@
-﻿namespace Joernaal.Middleware
+﻿// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal.Middleware
 {
     using System.Collections.Generic;
     using System.IO;
@@ -12,8 +15,8 @@
 
     public class UpdateReferencesMiddleware
     {
-        private readonly ProcessDelegate _next;
         private readonly ILogger _logger;
+        private readonly ProcessDelegate _next;
 
         public UpdateReferencesMiddleware(ProcessDelegate next, ILoggerFactory loggerFactory)
         {
@@ -25,7 +28,9 @@
         {
             if (context.Phase == ProcessingPhase.UpdatingReferences)
             {
-                var mapping = context.Item.Parent.Items.ToDictionary(element => element.SourcePath, element => element.TargetPath);
+                var mapping =
+                        context.Item.Parent.Items.ToDictionary(element => element.SourcePath,
+                            element => element.TargetPath);
 
                 var parser = new HtmlParser();
                 var item = context.Item;
@@ -57,7 +62,8 @@
             await _next(context);
         }
 
-        private bool UpdateReferences(IParentNode document, IReadOnlyDictionary<string, string> mapping, string selector, string name)
+        private bool UpdateReferences(IParentNode document, IReadOnlyDictionary<string, string> mapping,
+            string selector, string name)
         {
             var modified = false;
             var elements = document.QuerySelectorAll(selector);

@@ -1,4 +1,7 @@
-﻿namespace Joernaal
+﻿// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal
 {
     using System;
     using System.Collections.Concurrent;
@@ -9,8 +12,8 @@
 
     public class Collection
     {
+        private readonly IConfigurationRoot _configuration;
         private readonly ConcurrentBag<Item> _items;
-        private IConfigurationRoot _configuration;
 
         public Collection(string sourcePath, string targetPath, string themesPath)
         {
@@ -52,26 +55,23 @@
                 {
                     dynamic o = JObject.Parse(File.ReadAllText(s));
                     if (properties != null)
-                    {
-                        properties.Merge(o, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
-                    }
+                        properties.Merge(o,
+                            new JsonMergeSettings
+                            {
+                                MergeArrayHandling = MergeArrayHandling.Merge,
+                                MergeNullValueHandling = MergeNullValueHandling.Ignore
+                            });
                     else
-                    {
                         properties = o;
-                    }
                 }
 
                 if (string.Equals(configurationPath, SourcePath, StringComparison.OrdinalIgnoreCase))
-                {
                     break;
-                }
                 configurationPath = Path.GetFullPath(Path.Combine(configurationPath, ".."));
             } while (true);
 
             if (properties == null)
-            {
                 properties = new JObject();
-            }
 
             var item = new Item(this, path, properties);
             _items.Add(item);

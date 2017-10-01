@@ -4,8 +4,6 @@
 namespace Joernaal
 {
     using System;
-    using System.IO;
-    using System.Net.Mime;
     using Microsoft.Extensions.CommandLineUtils;
 
     internal class Program
@@ -14,8 +12,7 @@ namespace Joernaal
         {
             try
             {
-
-                CommandLineApplication application = new CommandLineApplication();
+                var application = new CommandLineApplication();
                 application.OnExecute(() =>
                 {
                     application.ShowHelp();

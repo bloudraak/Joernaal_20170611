@@ -1,4 +1,7 @@
-namespace Joernaal.Middleware
+// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
+namespace Joernaal
 {
     using System;
     using System.Linq;
@@ -20,14 +23,14 @@ namespace Joernaal.Middleware
             return app.UseMiddleware(typeof(TMiddleware), args);
         }
 
-        public static IApplicationBuilder UseMiddleware(this IApplicationBuilder app, Type middleware, params object[] args)
+        public static IApplicationBuilder UseMiddleware(this IApplicationBuilder app, Type middleware,
+            params object[] args)
         {
             if (typeof(IMiddleware).GetTypeInfo().IsAssignableFrom(middleware.GetTypeInfo()))
             {
                 if (args.Length > 0)
-                {
-                    throw new NotSupportedException("Explicit Middleware doesn't support constructor parameters as it is created through the service provider");
-                }
+                    throw new NotSupportedException(
+                        "Explicit Middleware doesn't support constructor parameters as it is created through the service provider");
                 return UseMiddlewareInterface(app, middleware);
             }
 
@@ -41,44 +44,32 @@ namespace Joernaal.Middleware
                 ).ToArray();
 
                 if (invokeMethods.Length > 1)
-                {
                     throw new InvalidOperationException("The middleware class has multiple invoke methods");
-                }
 
                 if (invokeMethods.Length == 0)
-                {
                     throw new InvalidOperationException("The middleware class has no invoke methods");
-                }
 
                 var methodinfo = invokeMethods[0];
                 if (!typeof(Task).IsAssignableFrom(methodinfo.ReturnType))
-                {
                     throw new InvalidOperationException("The invoke method does not return a type Task");
-                }
 
                 var parameters = methodinfo.GetParameters();
                 if (parameters.Length == 0 || parameters[0].ParameterType != typeof(JoernaalContext))
-                {
                     throw new InvalidOperationException("The first parameter does not return an invoke method");
-                }
 
                 var ctorArgs = new object[args.Length + 1];
                 ctorArgs[0] = next;
                 Array.Copy(args, 0, ctorArgs, 1, args.Length);
                 var instance = ActivatorUtilities.CreateInstance(app.ApplicationServices, middleware, ctorArgs);
                 if (parameters.Length == 1)
-                {
-                    return (ProcessDelegate)methodinfo.CreateDelegate(typeof(ProcessDelegate), instance);
-                }
+                    return (ProcessDelegate) methodinfo.CreateDelegate(typeof(ProcessDelegate), instance);
 
                 var factory = Compile<object>(methodinfo, parameters);
                 return context =>
                 {
                     var serviceProvider = context.ProcessingServices ?? applicationServices;
                     if (serviceProvider == null)
-                    {
                         throw new InvalidOperationException("There is no service provider available");
-                    }
                     return factory(instance, context, serviceProvider);
                 };
             });
@@ -90,19 +81,14 @@ namespace Joernaal.Middleware
             {
                 return async context =>
                 {
-                    var middlewareFactory = (IMiddlewareFactory)context.ProcessingServices.GetService(typeof(IMiddlewareFactory));
+                    var middlewareFactory =
+                            (IMiddlewareFactory) context.ProcessingServices.GetService(typeof(IMiddlewareFactory));
                     if (middlewareFactory == null)
-                    {
-                        // No middleware factory
                         throw new InvalidOperationException("There is no middleware factory registered");
-                    }
 
                     var middleware = middlewareFactory.Create(middlewareType);
                     if (middleware == null)
-                    {
-                        // The factory returned null, it's a broken implementation
                         throw new InvalidOperationException("Unable to create middleware");
-                    }
 
                     try
                     {
@@ -116,7 +102,8 @@ namespace Joernaal.Middleware
             });
         }
 
-        private static Func<T, JoernaalContext, IServiceProvider, Task> Compile<T>(MethodInfo methodinfo, ParameterInfo[] parameters)
+        private static Func<T, JoernaalContext, IServiceProvider, Task> Compile<T>(MethodInfo methodinfo,
+            ParameterInfo[] parameters)
         {
             // If we call something like
             //
@@ -152,13 +139,11 @@ namespace Joernaal.Middleware
 
             var methodArguments = new Expression[parameters.Length];
             methodArguments[0] = httpContextArg;
-            for (int i = 1; i < parameters.Length; i++)
+            for (var i = 1; i < parameters.Length; i++)
             {
                 var parameterType = parameters[i].ParameterType;
                 if (parameterType.IsByRef)
-                {
                     throw new NotSupportedException("The invoke method doesn't support out or ref parameters");
-                }
 
                 var parameterTypeExpression = new Expression[]
                 {
@@ -173,13 +158,13 @@ namespace Joernaal.Middleware
 
             Expression middlewareInstanceArg = instanceArg;
             if (methodinfo.DeclaringType != typeof(T))
-            {
                 middlewareInstanceArg = Expression.Convert(middlewareInstanceArg, methodinfo.DeclaringType);
-            }
 
             var body = Expression.Call(middlewareInstanceArg, methodinfo, methodArguments);
 
-            var lambda = Expression.Lambda<Func<T, JoernaalContext, IServiceProvider, Task>>(body, instanceArg, httpContextArg, providerArg);
+            var lambda =
+                    Expression.Lambda<Func<T, JoernaalContext, IServiceProvider, Task>>(body, instanceArg,
+                        httpContextArg, providerArg);
 
             return lambda.Compile();
         }

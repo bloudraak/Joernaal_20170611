@@ -1,3 +1,6 @@
+// Copyright (c) Werner Strydom. All rights reserved.
+// Licensed under the MIT license. See LICENSE in the project root for license information.
+
 namespace Joernaal
 {
     using System;
@@ -14,7 +17,7 @@ namespace Joernaal
 
         public IMiddleware Create(Type middlewareType)
         {
-            return ServiceProviderServiceExtensions.GetRequiredService(_serviceProvider, middlewareType) as IMiddleware;
+            return _serviceProvider.GetRequiredService(middlewareType) as IMiddleware;
         }
 
         public void Release(IMiddleware middleware)
